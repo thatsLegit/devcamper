@@ -1,5 +1,6 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const errorHandler = require('./middleware/error');
 //morgan: logger middleware
 const morgan = require('morgan');
 const colors = require('colors');
@@ -35,6 +36,10 @@ if (process.env.NODE_ENV === "development") {
 //Mount routers
 app.use('/api/v1/bootcamps', bootcamps);
 
+/*The errorHandling middleware has to be AFTER
+routers mounting quite logically*/
+/*Attention, le middleware a accès aux req, res mais pas aux routes donc /:id...*/
+app.use(errorHandler);
 
 /*By default NODE_ENV is set to development
 If you don't have two separate scripts for dev and prod, 
