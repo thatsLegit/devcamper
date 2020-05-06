@@ -31,7 +31,7 @@ exports.getBootcamp = async (req, res, next) => {
 
         //if the formatting is incorrect
     } catch (err) {
-        res.status(400).json({ success: false });
+        next(err);
     }
 }
 
