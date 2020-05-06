@@ -1,3 +1,4 @@
+const errorResponse = require('../utils/errorResponse');
 const Bootcamp = require('../models/Bootcamp');
 
 //Here we have all methods that are associated with the bootcamps routes
@@ -24,14 +25,14 @@ exports.getBootcamp = async (req, res, next) => {
 
         //if the formatting is correct but no id matching
         if (!bootcamp) {
-            return res.status(404).json({ success: false });
+            return next(new errorResponse(`Bootcamp not found with id of ${req.params.id}`, 404));
         }
 
         res.status(200).json({ success: true, data: bootcamp });
 
         //if the formatting is incorrect
     } catch (err) {
-        next(err);
+        next(new errorResponse(`Bootcamp not found with id of ${req.params.id}`, 404));
     }
 }
 
