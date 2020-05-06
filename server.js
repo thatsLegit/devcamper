@@ -1,10 +1,54 @@
 const express = require('express');
 const dotenv = require('dotenv');
+//morgan: logger middleware
+const morgan = require('morgan');
+const colors = require('colors');
+const connectDB = require('./config/db');
 
 //load env vars
 dotenv.config({ path: './config/config.env' });
 
+//Connect to database
+connectDB();
+
+//require routes
+const bootcamps = require('./routes/bootcamps');
+
+//Initialize express
 const app = express();
 
+/*A middleware is just a function that has access to req, res
+that ends with a next();
+integrate it to app.use() and the middleware will be ran on each request.
+The middlewares are being ran before the actual code for the route
+So a logger mddw would authenticate and then pass the user a req var ! */
+
+//body parser middleware
+app.use(express.json());
+
+/*Dev logging middleware
+To be used only in development mode*/
+if (process.env.NODE_ENV === "development") {
+    app.use(morgan('dev'));
+}
+
+//Mount routers
+app.use('/api/v1/bootcamps', bootcamps);
+
+
+/*By default NODE_ENV is set to development
+If you don't have two separate scripts for dev and prod, 
+we cannot really distinguish devlopment and production
+dependencies.*/
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
+const server = app.listen(PORT,
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow.bold));
+
+/*Handle unhandled promise rejection
+This is typically in case we cannot 
+connect to MongoDB whathever the reason*/
+process.on('unhandledRejection', (err, promise) => {
+    console.log(`error: ${err.message}`.red);
+    //close server & exit process
+    server.close(() => process.exit(1));
+})
