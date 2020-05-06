@@ -1,11 +1,13 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
+const geocoder = require('../utils/geocoder');
 
-//Creates a new connection in the DB ??
+//Creates a new collection in the DB ??
 const BootcampSchema = new mongoose.Schema({
-    /*In MongoDB there's also a concept of "primary key,
+    /*In MongoDB there's also a concept of "primary key",
     trough the filed unique, which means here that no document
-    name could be repeated"
-    It's written as _id */
+    name could be repeated. In that case it's name"
+    There's also _id created automatically*/
     name: {
         type: String,
         required: [true, 'Please add a name'],
@@ -101,6 +103,34 @@ const BootcampSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
+});
+
+//MONGOOSE MIDDLEWARES
+
+//Create slug from the name
+//For that we use a Mongoose pre hook (before the document is saved)
+BootcampSchema.pre('save', function (next) {
+    this.slug = slugify(this.name, { lower: true });
+    next();
+});
+
+//Geocode and create location field
+BootcampSchema.pre('save', async function (next) {
+    let loc = await geocoder.geocode(this.address);
+    this.location = {
+        type: 'Point',
+        coordinates: [loc[0].longitude, loc[0].latitude],
+        formattedAddress: loc[0].formattedAddress,
+        street: loc[0].streetName,
+        city: loc[0].city,
+        state: loc[0].stateCode,
+        zipcode: loc[0].zipcode,
+        country: loc[0].countryCode
+    }
+    next();
+
+    //Do not save address in DB
+    this.address = undefined;
 });
 
 module.exports = mongoose.model('Bootcamp', BootcampSchema);
