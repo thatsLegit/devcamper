@@ -7,7 +7,7 @@ const Bootcamp = require('../models/Bootcamp');
 //Here we have all methods that are associated with the bootcamps routes
 
 // @desc        Get all bootcamps
-// @route       /api/v1/bootcamps
+// @route       GET /api/v1/bootcamps
 // @access      Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
     //Contains filtering and sorting via the query string
@@ -27,7 +27,7 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
     queryStr = queryStr.replace(/\b(lte|lt|gt|gte|in)\b/g, match => `$${match}`); //in: within list
 
     //Finding resource
-    query = Bootcamp.find(JSON.parse(queryStr));
+    query = Bootcamp.find(JSON.parse(queryStr)).populate('courses'); //populate with virtual courses
 
     /*The idea here is to first get the whole resource with all filters, and then...
     Select only the fields we need.
@@ -76,7 +76,7 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
 });
 
 // @desc        Get single bootcamp
-// @route       /api/v1/bootcamps/id
+// @route       GET /api/v1/bootcamps/id
 // @access      Public
 exports.getBootcamp = asyncHandler(async (req, res, next) => {
     const bootcamp = await Bootcamp.findById(req.params.id);
@@ -91,7 +91,7 @@ exports.getBootcamp = asyncHandler(async (req, res, next) => {
 });
 
 // @desc        Create bootcamp
-// @route       /api/v1/bootcamps
+// @route       POST /api/v1/bootcamps
 // @access      Private
 exports.createBootcamp = asyncHandler(async (req, res, next) => {
     /*Create a document in the collection bootcamps basically
@@ -105,7 +105,7 @@ exports.createBootcamp = asyncHandler(async (req, res, next) => {
 });
 
 // @desc        Update bootcamp
-// @route       /api/v1/bootcamps/id
+// @route       PUT /api/v1/bootcamps/id
 // @access      Private
 exports.updateBootcamp = asyncHandler(async (req, res, next) => {
     const bootcamp = await Bootcamp.findByIdAndUpdate(req.params.id, req.body, {
@@ -121,21 +121,23 @@ exports.updateBootcamp = asyncHandler(async (req, res, next) => {
 });
 
 // @desc        Delete bootcamp
-// @route       /api/v1/bootcamps/id
+// @route       DELETE /api/v1/bootcamps/id
 // @access      Private
 exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
-    const bootcamp = await Bootcamp.findByIdAndDelete(req.params.id);
+    const bootcamp = await Bootcamp.findById(req.params.id); //findByIdAndDelete doesn't work with pre('remove') hook
 
     if (!bootcamp) {
         return next(new ErrorResponse(`Resource not found with id ${req.params.id}`, 404));
     }
+
+    bootcamp.remove();
 
     res.status(200).json({ success: true, data: {} });
 });
 
 
 // @desc        Get bootcamps within a radius
-// @route       /api/v1/bootcamps/radius/:zipcode/:distance
+// @route       GET /api/v1/bootcamps/radius/:zipcode/:distance
 // @access      Private
 exports.getBootcampsInRadius = asyncHandler(async (req, res, next) => {
     //destructuring makes getting data from url quite easy
