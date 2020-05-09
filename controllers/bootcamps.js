@@ -11,14 +11,39 @@ const Bootcamp = require('../models/Bootcamp');
 // @access      Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
     //Contains filtering via the query string
-    //To enable advanced filtering key words such as lte, gte...
     let query;
-    let queryStr = JSON.stringify(req.query);
+    let reqQuery = { ...req.query }; //Makes a copy of query object 
+
+    //Fields to exclude
+    const removeFields = ['select', 'sort'];
+
+    //Loop through excluded params and remove them from reqQery
+    //Reminder : objectName.propertyName or objectName["propertyName"]
+    removeFields.forEach(param => delete reqQuery[param]);
+
+    //To enable advanced filtering key words such as lte, gte... we have to put a $ :
+    let queryStr = JSON.stringify(reqQuery);
     queryStr = queryStr.replace(/\b(lte|lt|gt|gte|in)\b/g, match => `$${match}`); //in: within list
 
-    console.log(queryStr);
-
+    //Finding resource
     query = Bootcamp.find(JSON.parse(queryStr));
+
+    /*The idea here is to first get the whole resource with all filters, and then...
+    Select only the fields we need.
+    This is done with query.select(name1 name2), but we want to replace " " by "," : */
+    if (req.query.select) {
+        const fields = req.query.select.replace(/,/g, ' ');
+        query.select(fields);
+    }
+
+    //Then we allow a custom sorting :
+    if (req.query.sort) {
+        const sortBy = req.query.sort.replace(/,/g, ' ');
+        query.sort(sortBy);
+    } else { //Default sorting...
+        query.sort('-createdAt');
+    }
+
     const bootcamps = await query;
 
     res.status(200).json({ success: true, count: bootcamps.length, data: bootcamps });
