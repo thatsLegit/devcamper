@@ -10,12 +10,13 @@ const Bootcamp = require('../models/Bootcamp');
 // @route       /api/v1/bootcamps
 // @access      Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
-    //Contains filtering via the query string
+    //Contains filtering and sorting via the query string
+    //ex : ?careers[in]=Data Science&select=name,careers&sort=-name
     let query;
     let reqQuery = { ...req.query }; //Makes a copy of query object 
 
     //Fields to exclude
-    const removeFields = ['select', 'sort'];
+    const removeFields = ['select', 'sort', 'page', 'limit'];
 
     //Loop through excluded params and remove them from reqQery
     //Reminder : objectName.propertyName or objectName["propertyName"]
@@ -44,9 +45,34 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
         query.sort('-createdAt');
     }
 
-    const bootcamps = await query;
+    //Simulate pagination by limiting the number of displayed results
+    //and skipping certain results :
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 25;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit //end-start = limit
+    const total = await Bootcamp.countDocuments();
 
-    res.status(200).json({ success: true, count: bootcamps.length, data: bootcamps });
+    query.skip(startIndex).limit(limit);
+
+    let pagination = {};
+
+    if (total > endIndex) {
+        pagination = {
+            next: page + 1,
+            page
+        }
+    }
+    if (startIndex > 1) {
+        pagination = {
+            prev: page - 1,
+            page
+        }
+    }
+
+
+    const bootcamps = await query;
+    res.status(200).json({ success: true, count: bootcamps.length, pagination, data: bootcamps });
 });
 
 // @desc        Get single bootcamp
