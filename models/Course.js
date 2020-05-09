@@ -25,7 +25,7 @@ const CourseSchema = new mongoose.Schema({
     },
     scholarshipAvailable: {
         type: Boolean,
-        dfault: false
+        default: false
     },
     createdAt: {
         type: Date,
@@ -38,18 +38,16 @@ const CourseSchema = new mongoose.Schema({
     }
 });
 
-//We creta for CourseSchema, a static function
+//We create for CourseSchema, a static function
 CourseSchema.statics.getAverageCost = async function (bootcampId) {
-    console.log(`Calculating average cost...`.blue);
-
     const obj = await this.aggregate([
         {
-            $match: { bootcamp: bootcampId }
+            $match: { bootcamp: bootcampId } //on récupère tous les cours qui ont ce bootcampId
         },
         {
             $group: {
                 _id: '$bootcamp',
-                averageCost: { $avg: '$tuition' }
+                averageCost: { $avg: '$tuition' } //on aggrege en appliquant une moyenne sur le prix
             }
         }
     ]);

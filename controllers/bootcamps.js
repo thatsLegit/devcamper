@@ -1,3 +1,4 @@
+const path = require('path');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const geocoder = require('../utils/geocoder');
@@ -84,7 +85,7 @@ exports.getBootcamp = asyncHandler(async (req, res, next) => {
 
     //if the formatting is correct but no id matching
     if (!bootcamp) {
-        return next(new ErrorResponse(`Resource not found with id ${req.params.id}`, 404));
+        return next(new ErrorResponse(`Bootcamp not found with id ${req.params.id}`, 404));
     }
 
     res.status(200).json({ success: true, data: bootcamp });
@@ -114,7 +115,7 @@ exports.updateBootcamp = asyncHandler(async (req, res, next) => {
     });
 
     if (!bootcamp) {
-        return next(new ErrorResponse(`Resource not found with id ${req.params.id}`, 404));
+        return next(new ErrorResponse(`Bootcamp not found with id ${req.params.id}`, 404));
     }
 
     res.status(200).json({ success: true, data: bootcamp });
@@ -127,7 +128,7 @@ exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
     const bootcamp = await Bootcamp.findById(req.params.id); //findByIdAndDelete doesn't work with pre('remove') hook
 
     if (!bootcamp) {
-        return next(new ErrorResponse(`Resource not found with id ${req.params.id}`, 404));
+        return next(new ErrorResponse(`Bootcamp not found with id ${req.params.id}`, 404));
     }
 
     bootcamp.remove();
@@ -164,5 +165,48 @@ exports.getBootcampsInRadius = asyncHandler(async (req, res, next) => {
         success: true,
         count: bootcamps.length,
         data: bootcamps
+    });
+});
+
+// @desc        Upload photo for a bootcamp
+// @route       PUT /api/v1/bootcamps/:id/photo
+// @access      Private
+exports.bootcampPhotoUpload = asyncHandler(async (req, res, next) => {
+    const bootcamp = await Bootcamp.findById(req.params.id);
+
+    if (!bootcamp) {
+        return next(new ErrorResponse(`Bootcamp not found with id ${req.params.id}`, 404));
+    }
+
+    //Check if there's a file uploaded
+    if (!req.files) {
+        return next(new ErrorResponse(`Please upload a file`, 400));
+    }
+
+    const file = req.files.file;
+
+    //Make sure the image is a photo
+    if (!file.mimetype.startsWith('image')) {
+        return next(new ErrorResponse(`Please upload a photo`, 400));
+    }
+
+    //Check file size
+    if (file.size > process.env.MAX_FILE_UPLOAD) {
+        return next(new ErrorResponse(`Please upload an image less than ${process.env.MAX_FILE_UPLOAD} MB`, 400));
+    }
+
+    //Create custom file name (quite what I did in Oporctunite)
+    file.name = bootcamp._id + path.parse(file.name).ext;
+
+    file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async err => {
+        if (err) {
+            console.err(error);
+            return next(new ErrorResponse(`Problem with the uploads`, 500));
+        }
+        await Bootcamp.findByIdAndUpdate(req.params.id, { photo: file.name });
+        res.status(200).json({
+            success: true,
+            data: file.name
+        });
     });
 });
