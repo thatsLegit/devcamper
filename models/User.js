@@ -25,7 +25,7 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add a password'],
         minlength: 6,
-        select: false
+        select: false //We disable by default the ability to get the password from db
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
@@ -35,7 +35,7 @@ const UserSchema = new mongoose.Schema({
     }
 });
 
-//Encrypt password using Bcrypt
+//Encrypt password using Bcrypt middleware
 UserSchema.pre('save', async function (next) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -48,5 +48,10 @@ UserSchema.methods.getSignedJwtToken = function () {
         expiresIn: process.env.JWT_EXPIRE
     });
 };
+
+//Match user entered password with hashed password in the database
+UserSchema.methods.matchPasswords = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+}
 
 module.exports = mongoose.model('User', UserSchema);

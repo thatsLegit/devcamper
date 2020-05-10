@@ -6,6 +6,7 @@ const errorHandler = require('./middleware/error');
 const morgan = require('morgan');
 const colors = require('colors');
 const fileupload = require('express-fileupload');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 
 //load env vars
@@ -30,6 +31,9 @@ So a logger mddw would authenticate and then pass the user a req var ! */
 
 //body parser middleware
 app.use(express.json());
+
+//Cookie parser
+app.use(cookieParser());
 
 /*Dev logging middleware
 To be used only in development mode*/
