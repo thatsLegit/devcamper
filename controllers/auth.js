@@ -50,6 +50,8 @@ exports.login = asyncHandler(async (req, res, next) => {
     sendTokenResponse(user, 200, res);
 });
 
+/*Cookies are a more secure way to store the received token
+than localstorage (cache of the browser)*/
 //Get token from model, create cookie and send response :
 const sendTokenResponse = (user, statusCode, res) => {
     //create token
@@ -66,3 +68,15 @@ const sendTokenResponse = (user, statusCode, res) => {
 
     return res.status(statusCode).cookie('token', token, options).json({ success: true, token });
 };
+
+
+// @desc        Get current logged in user
+// @route       POST /api/v1/auth/me
+// @access      Private
+
+exports.getMe = asyncHandler(async (req, res, next) => {
+    res.status(200).json({
+        success: true,
+        data: req.user
+    });
+});

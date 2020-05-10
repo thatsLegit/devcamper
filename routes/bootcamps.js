@@ -10,6 +10,9 @@ const router = express.Router();
 const Bootcamp = require('../models/Bootcamp');
 const advancedResults = require('../middleware/advancedResults');
 
+//Bring protect routes middleware
+const { protect } = require('../middleware/auth');
+
 //Re-route into other resource routers
 router.use('/:bootcampId/courses', courseRouter);
 
@@ -18,8 +21,8 @@ router.use('/:bootcampId/courses', courseRouter);
 //but the choice is made to make a controller
 
 router.route('/radius/:zipcode/:distance').get(getBootcampsInRadius);
-router.route('/').get(advancedResults(Bootcamp, 'courses'), getBootcamps).post(createBootcamp); //advancedResults middleware here
-router.route('/:id').get(getBootcamp).put(updateBootcamp).delete(deleteBootcamp);
-router.route('/:id/photo').put(bootcampPhotoUpload);
+router.route('/').get(advancedResults(Bootcamp, 'courses'), getBootcamps).post(protect, createBootcamp); //advancedResults middleware here
+router.route('/:id').get(getBootcamp).put(protect, updateBootcamp).delete(protect, deleteBootcamp);
+router.route('/:id/photo').put(protect, bootcampPhotoUpload);
 
 module.exports = router;
