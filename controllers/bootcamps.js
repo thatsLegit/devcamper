@@ -35,6 +35,15 @@ exports.getBootcamp = asyncHandler(async (req, res, next) => {
 exports.createBootcamp = asyncHandler(async (req, res, next) => {
     /*Create a document in the collection bootcamps basically
     Mongoose always returns a Promise, so await it */
+    req.body.user = req.user.id;
+
+    //Check for published bootcamps
+    const isPublished = await Bootcamp.find({ user: req.body.user });
+    //If the user is not an admin he can only publish one bootcamp
+    if (isPublished && req.user.role !== 'admin') {
+        return next(new ErrorResponse(`You already have one published bootcamp`, 403));
+    }
+
     const bootcamp = await Bootcamp.create(req.body);
 
     res.status(201).json({
@@ -67,6 +76,12 @@ exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
 
     if (!bootcamp) {
         return next(new ErrorResponse(`Bootcamp not found with id ${req.params.id}`, 404));
+    }
+
+    //Only the owner of the bootcamp can delete it !
+    console.log(bootcamp.user); console.log(req.user.id);
+    if (bootcamp.user != req.user.id) {
+        return next(new ErrorResponse(`Action forbidden to user with id ${req.params.id}`, 403));
     }
 
     bootcamp.remove();

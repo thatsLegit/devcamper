@@ -54,7 +54,7 @@ exports.login = asyncHandler(async (req, res, next) => {
 than localstorage (cache of the browser)*/
 //Get token from model, create cookie and send response :
 const sendTokenResponse = (user, statusCode, res) => {
-    //create token
+    //Each time you register or connect successfully, you get a signed token
     const token = user.getSignedJwtToken();
 
     const options = {
