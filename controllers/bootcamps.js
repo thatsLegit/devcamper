@@ -11,69 +11,7 @@ const Bootcamp = require('../models/Bootcamp');
 // @route       GET /api/v1/bootcamps
 // @access      Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
-    //Contains filtering and sorting via the query string
-    //ex : ?careers[in]=Data Science&select=name,careers&sort=-name
-    let query;
-    let reqQuery = { ...req.query }; //Makes a copy of query object 
-
-    //Fields to exclude
-    const removeFields = ['select', 'sort', 'page', 'limit'];
-
-    //Loop through excluded params and remove them from reqQery
-    //Reminder : objectName.propertyName or objectName["propertyName"]
-    removeFields.forEach(param => delete reqQuery[param]);
-
-    //To enable advanced filtering key words such as lte, gte... we have to put a $ :
-    let queryStr = JSON.stringify(reqQuery);
-    queryStr = queryStr.replace(/\b(lte|lt|gt|gte|in)\b/g, match => `$${match}`); //in: within list
-
-    //Finding resource
-    query = Bootcamp.find(JSON.parse(queryStr)).populate('courses'); //populate with virtual courses
-
-    /*The idea here is to first get the whole resource with all filters, and then...
-    Select only the fields we need.
-    This is done with query.select(name1 name2), but we want to replace " " by "," : */
-    if (req.query.select) {
-        const fields = req.query.select.replace(/,/g, ' ');
-        query.select(fields);
-    }
-
-    //Then we allow a custom sorting :
-    if (req.query.sort) {
-        const sortBy = req.query.sort.replace(/,/g, ' ');
-        query.sort(sortBy);
-    } else { //Default sorting...
-        query.sort('-createdAt');
-    }
-
-    //Simulate pagination by limiting the number of displayed results
-    //and skipping certain results :
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 25;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit //end-start = limit
-    const total = await Bootcamp.countDocuments();
-
-    query.skip(startIndex).limit(limit);
-
-    let pagination = {};
-
-    if (total > endIndex) {
-        pagination = {
-            next: page + 1,
-            page
-        }
-    }
-    if (startIndex > 1) {
-        pagination = {
-            prev: page - 1,
-            page
-        }
-    }
-
-
-    const bootcamps = await query;
-    res.status(200).json({ success: true, count: bootcamps.length, pagination, data: bootcamps });
+    res.status(200).json(res.advancedResults);
 });
 
 // @desc        Get single bootcamp
