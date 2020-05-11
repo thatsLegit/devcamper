@@ -56,14 +56,21 @@ exports.createBootcamp = asyncHandler(async (req, res, next) => {
 // @route       PUT /api/v1/bootcamps/id
 // @access      Private
 exports.updateBootcamp = asyncHandler(async (req, res, next) => {
-    const bootcamp = await Bootcamp.findByIdAndUpdate(req.params.id, req.body, {
-        new: true,
-        runValidators: true
-    });
+    let bootcamp = await Bootcamp.findById(req.params.id);
 
     if (!bootcamp) {
         return next(new ErrorResponse(`Bootcamp not found with id ${req.params.id}`, 404));
     }
+
+    //Only the owner of the bootcamp can delete it (and the admin)!
+    if (bootcamp.user != req.user.id && req.user.role != 'admin') {
+        return next(new ErrorResponse(`Action forbidden to user with id ${req.params.id}`, 403));
+    }
+
+    bootcamp = Bootcamp.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true
+    });
 
     res.status(200).json({ success: true, data: bootcamp });
 });
@@ -78,9 +85,8 @@ exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse(`Bootcamp not found with id ${req.params.id}`, 404));
     }
 
-    //Only the owner of the bootcamp can delete it !
-    console.log(bootcamp.user); console.log(req.user.id);
-    if (bootcamp.user != req.user.id) {
+    //Only the owner of the bootcamp can delete it (and the admin)!
+    if (bootcamp.user != req.user.id && req.user.role != 'admin') {
         return next(new ErrorResponse(`Action forbidden to user with id ${req.params.id}`, 403));
     }
 
@@ -129,6 +135,11 @@ exports.bootcampPhotoUpload = asyncHandler(async (req, res, next) => {
 
     if (!bootcamp) {
         return next(new ErrorResponse(`Bootcamp not found with id ${req.params.id}`, 404));
+    }
+
+    //Only the owner of the bootcamp can delete it (and the admin)!
+    if (bootcamp.user != req.user.id && req.user.role != 'admin') {
+        return next(new ErrorResponse(`Action forbidden to user with id ${req.params.id}`, 403));
     }
 
     //Check if there's a file uploaded

@@ -44,11 +44,16 @@ exports.getCourse = asyncHandler(async (req, res, next) => {
 // @access      Private
 exports.addCourse = asyncHandler(async (req, res, next) => {
     req.body.bootcamp = req.params.bootcampId;
+    req.body.user = req.user.id;
 
     const bootcamp = await Bootcamp.findById(req.params.bootcampId);
 
     if (!bootcamp) {
         return next(new ErrorResponse(`Bootcamp not found with the id of ${req.params.id}`, 404));
+    }
+
+    if (bootcamp.user.toString() !== req.user.id && req.user.role != 'admin') {
+        return next(new ErrorResponse(`Action forbidden to user with id ${req.params.id}`, 403));
     }
 
     const course = await Course.create(req.body);
@@ -63,14 +68,20 @@ exports.addCourse = asyncHandler(async (req, res, next) => {
 // @route       PUT /api/v1/courses/:id
 // @access      Private
 exports.updateCourse = asyncHandler(async (req, res, next) => {
-    const course = await Course.findByIdAndUpdate(req.params.id, req.body, {
-        new: true,
-        runValidators: true
-    });
+    let course = await Course.findById(req.params.id);
 
     if (!course) {
         return next(new ErrorResponse(`Course not found with the id of ${req.params.id}`, 404));
     }
+
+    if (course.user.toString() !== req.user.id && req.user.role != 'admin') {
+        return next(new ErrorResponse(`Action forbidden to user with id ${req.params.id}`, 403));
+    }
+
+    course = Course.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true
+    });
 
     res.status(200).json({
         success: true,
@@ -86,6 +97,10 @@ exports.deleteCourse = asyncHandler(async (req, res, next) => {
 
     if (!course) {
         return next(new ErrorResponse(`Course not found with the id of ${req.params.id}`, 404));
+    }
+
+    if (course.user.toString() !== req.user.id && req.user.role != 'admin') {
+        return next(new ErrorResponse(`Action forbidden to user with id ${req.params.id}`, 403));
     }
 
     await course.remove();
