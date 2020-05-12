@@ -4,6 +4,9 @@ const { getBootcamp, getBootcamps, createBootcamp, updateBootcamp,
     = require('../controllers/bootcamps');
 //Include other resource routers
 const courseRouter = require('./courses');
+const reviewRouter = require('./reviews');
+
+//Main router
 const router = express.Router();
 
 //Bring advancedResults middleware and required models
@@ -15,6 +18,7 @@ const { protect, authorize } = require('../middleware/auth');
 
 //Re-route into other resource routers
 router.use('/:bootcampId/courses', courseRouter);
+router.use('/:bootcampId/reviews', reviewRouter);
 
 //Functions executed in the routes can be coded here too, 
 //with using router.get(), router.post()...

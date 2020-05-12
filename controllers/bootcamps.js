@@ -7,7 +7,7 @@ const Bootcamp = require('../models/Bootcamp');
 
 //Here we have all methods that are associated with the bootcamps routes
 
-// @desc        Get all bootcamps
+// @desc        Get bootcamps (filters included)
 // @route       GET /api/v1/bootcamps
 // @access      Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
