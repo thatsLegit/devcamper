@@ -5,6 +5,12 @@ const errorHandler = require('./middleware/error');
 //morgan: logger middleware
 const morgan = require('morgan');
 const colors = require('colors');
+const helmet = require('helmet');
+const xss = require('xss-clean');
+const hpp = require('hpp');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
 const fileupload = require('express-fileupload');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
@@ -45,6 +51,29 @@ if (process.env.NODE_ENV === "development") {
 
 //File uploading
 app.use(fileupload());
+
+//Sanitize data
+app.use(mongoSanitize());
+
+//Set security headers
+app.use(helmet());
+
+//Prevent cross-site scripting
+app.use(xss());
+
+//Rate limiting
+const limiter = rateLimit({
+    windowMs: 10 * 1000 * 60, //10 minutes
+    max: 100
+});
+app.use(limiter);
+
+//Prevent http param pollution
+app.use(hpp());
+
+/*Enable cross-origin ressource sharing (default is same origin policy)
+But if we want our api to be public, we must enable it.*/
+app.use(cors());
 
 //Set static folder (accessible in the url through localhost:port/uploads/...)
 app.use(express.static(path.join(__dirname, 'public')));
